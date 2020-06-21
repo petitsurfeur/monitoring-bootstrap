@@ -3,7 +3,7 @@ version: '3'
 services:
 
   prometheus:
-    image: prom/prometheus:v2.11.1
+    image: prom/prometheus:v2.19.1
     container_name: prometheus
     deploy:
       replicas: 1
@@ -15,10 +15,17 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=365d'
-    network_mode: "host"
+        #network_mode: "host"
+    networks:
+      - monitor-net
+    expose:
+      - 9090
+    restart: unless-stopped
+    labels:
+      org.label-schema.group: "monitoring"
 
   alertmanager:
-    image: prom/alertmanager:v0.18.0
+    image: prom/alertmanager:v0.21.0
     container_name: alertmanager
     deploy:
       replicas: 1
@@ -27,10 +34,17 @@ services:
       - ./alertmanager/templates/default.tmpl:/etc/alertmanager/templates/default.tmpl
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
-    network_mode: "host"
+        #network_mode: "host"
+    networks:
+      - monitor-net
+    expose:
+      - 9093
+    restart: unless-stopped
+    labels:
+      org.label-schema.group: "monitoring"
 
   grafana:
-    image: grafana/grafana:6.2.5
+    image: grafana/grafana:7.0.3
     container_name: grafana
     environment:
       - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
@@ -44,23 +58,66 @@ services:
       - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboards:/var/lib/grafana/dashboards
-    network_mode: "host"
+        #network_mode: "host"
+    networks:
+      - monitor-net
+    expose:
+      - 3000
+    labels:
+      org.label-schema.group: "monitoring"
 
   blackbox:
-    image: prom/blackbox-exporter:v0.14.0
+    image: prom/blackbox-exporter:v0.17.0
     container_name: blackbox_exporter
     deploy:
       replicas: 1
     volumes:
-    - ./blackbox:/config
-    network_mode: "host"
+      - ./blackbox:/config
+        #network_mode: "host"
+    networks:
+      - monitor-net
 
   node_exporter:
-    image: prom/node-exporter:v0.18.1
+    image: prom/node-exporter:v1.0.1
     container_name: node_exporter
     deploy:
       replicas: 1
-    network_mode: "host"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+        #network_mode: "host"
+    networks:
+      - monitor-net
+    expose:
+      - 9100
+    restart: unless-stopped
+    labels:
+      org.label-schema.group: "monitoring"
+    
+  cadvisor:
+    image: gcr.io/google-containers/cadvisor:v0.36.0
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    expose:
+      - 8080
+        #networks:
+        #  - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
 
 volumes:
   prometheus-data:
