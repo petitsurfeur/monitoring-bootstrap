@@ -104,7 +104,7 @@ services:
     labels:
       org.label-schema.group: "monitoring"
     
-      ### Container Advisor : collecte et exporte tout ce qui concerne les containers
+### Container Advisor : collecte et exporte tout ce qui concerne les containers
     cadvisor:
     image: gcr.io/google-containers/cadvisor:v0.36.0
     container_name: cadvisor
