@@ -5,8 +5,8 @@ services:
   prometheus:
     image: prom/prometheus:v2.19.1
     container_name: prometheus
-    deploy:
-      replicas: 1
+#    deploy:
+#      replicas: 1
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -16,42 +16,42 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=365d'
         #network_mode: "host"
-    networks:
-      - monitor-net
+        #    networks:
+        #      - monitor-net
     expose:
       - 9090
     restart: unless-stopped
     labels:
       org.label-schema.group: "monitoring"
 
-### Gestion et routage des alertes
+### AlertManager : Gestion et routage des alertes
   alertmanager:
     image: prom/alertmanager:v0.21.0
     container_name: alertmanager
-    deploy:
-      replicas: 1
+    #    deploy:
+    #  replicas: 1
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - ./alertmanager/templates/default.tmpl:/etc/alertmanager/templates/default.tmpl
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
         #network_mode: "host"
-    networks:
-      - monitor-net
+        #    networks:
+        #      - monitor-net
     expose:
       - 9093
     restart: unless-stopped
     labels:
       org.label-schema.group: "monitoring"
 
-### Serveur WEB pour la visualisation des metriques
+### Grafana : Serveur WEB pour la visualisation des metriques
   grafana:
     image: grafana/grafana:7.0.3
     container_name: grafana
     environment:
       - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
-    deploy:
-      replicas: 1
+#       deploy:
+#      replicas: 1
     depends_on:
       - prometheus
     volumes:
@@ -61,31 +61,31 @@ services:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboards:/var/lib/grafana/dashboards
         #network_mode: "host"
-    networks:
-      - monitor-net
+        #    networks:
+        #      - monitor-net
     expose:
       - 3000
     labels:
       org.label-schema.group: "monitoring"
 
-### Permet d'utiliser 4 sondes (probes): ICMP, HTTP(S), DNS et TCP
+### Blackbox : Permet d'utiliser 4 sondes (probes): ICMP, HTTP(S), DNS et TCP
   blackbox:
     image: prom/blackbox-exporter:v0.17.0
     container_name: blackbox_exporter
-    deploy:
-      replicas: 1
+    #    deploy:
+    #      replicas: 1
     volumes:
       - ./blackbox:/config
         #network_mode: "host"
-    networks:
-      - monitor-net
+        #    networks:
+        #      - monitor-net
 
-### Collecteur de metriques
+### Node Exporter : Collecteur de metriques
   node_exporter:
     image: prom/node-exporter:v1.0.1
     container_name: node_exporter
-    deploy:
-      replicas: 1
+    #    deploy:
+    #      replicas: 1
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -96,8 +96,8 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
         #network_mode: "host"
-    networks:
-      - monitor-net
+        #    networks:
+        #      - monitor-net
     expose:
       - 9100
     restart: unless-stopped
@@ -105,24 +105,24 @@ services:
       org.label-schema.group: "monitoring"
     
 ### Container Advisor : collecte et exporte tout ce qui concerne les containers
-    cadvisor:
-    image: gcr.io/google-containers/cadvisor:v0.36.0
-    container_name: cadvisor
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
-    restart: unless-stopped
-    networks:
-      - monitor-net
-    expose:
-      - 8080
-        #networks:
-        #  - monitor-net
-    labels:
-      org.label-schema.group: "monitoring"
+#    cadvisor:
+#    image: gcr.io/google-containers/cadvisor:v0.36.0
+#    container_name: cadvisor
+#    volumes:
+#      - /:/rootfs:ro
+#      - /var/run:/var/run:rw
+#      - /sys:/sys:ro
+#      - /var/lib/docker:/var/lib/docker:ro
+#      - /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
+#    restart: unless-stopped
+#    networks:
+#      - monitor-net
+#    expose:
+#      - 8080
+#        #networks:
+#        #  - monitor-net
+#    labels:
+#      org.label-schema.group: "monitoring"
 
 volumes:
   prometheus-data:
