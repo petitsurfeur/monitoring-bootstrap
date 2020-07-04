@@ -32,7 +32,7 @@ scrape_configs:
 
   - job_name: 'node_explorer'
     static_configs:
-      - targets: ['192.168.50.31:9100','192.168.50.40:9100','192.168.50.35:9100']
+      - targets: ['srv-jeedom:9100','srv-proxmox:9100','srv-kali:9100','zeus.cyb.pw:9100','hades.cyb.pw:9100','demeter.cyb.pw:9100','poseidon.cyb.pw:9100']
     scrape_interval: 5s
 
 
